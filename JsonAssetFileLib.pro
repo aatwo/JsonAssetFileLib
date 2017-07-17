@@ -24,7 +24,11 @@ HEADERS += \
     include/jsonassetfilecommon.h \
     include/jsonassetfilebuilder.h \
     include/jsonassetfilereader.h \
-    include/jsonassetfileutils.h
+    include/jsonassetfileutils.h \
+    include/rapidjson/*.h \
+    include/rapidjson/error/*.h \
+    include/rapidjson/internal/*.h \
+    include/rapidjson/msinttypes/*.h
 
 unix {
     target.path = /usr/lib
