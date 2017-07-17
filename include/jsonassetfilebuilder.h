@@ -5,6 +5,8 @@
 #include "jsonassetfilecommon.h"
 #include <string>
 #include <fstream>
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
 
 
 namespace jaf
@@ -18,7 +20,7 @@ namespace jaf
             struct Asset
             {
                 unsigned char*  data        = nullptr;
-                unsigned int    dataLength  = -1;
+                size_t          dataLength  = -1;
                 std::string     prefix;
                 std::string     name;
             };
@@ -28,7 +30,7 @@ namespace jaf
                                 ~Builder();
 
             bool                start();
-            bool                add( Asset data );
+            bool                add( Asset asset );
             bool                finish();
             bool                isOpen();
             std::string         lastError();
@@ -41,8 +43,8 @@ namespace jaf
             std::string*        mFileName   = nullptr;
             std::string*        mLastError  = nullptr;
             std::ofstream*      mFile       = nullptr;
-            int                 mCount      = 0;
-
+            rapidjson::StringBuffer* mJsonFileBuffer = nullptr;
+            rapidjson::Writer<rapidjson::StringBuffer>* mJsonFileWriter = nullptr;
 
 
     }; // Builder

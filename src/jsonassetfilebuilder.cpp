@@ -5,7 +5,9 @@
 jaf::Builder::Builder( const char* fileName )
     : mFileName( new std::string( fileName ) ),
       mLastError( new std::string( "" ) ),
-      mFile( new std::ofstream() )
+      mFile( new std::ofstream() ),
+      mJsonFileBuffer( new rapidjson::StringBuffer ),
+      mJsonFileWriter( new rapidjson::Writer<rapidjson::StringBuffer>( *mJsonFileBuffer ) )
 {
 }
 
@@ -16,88 +18,62 @@ jaf::Builder::Builder( std::string fileName )
 
 jaf::Builder::~Builder()
 {
-    finish();
-    delete mFileName;
-    delete mLastError;
+    if( mFile->is_open() )
+        mFile->close();
+
+    delete mJsonFileWriter;
+    delete mJsonFileBuffer;
     delete mFile;
+    delete mLastError;
+    delete mFileName;
 }
 
 bool jaf::Builder::start()
 {
-    if( mFile->is_open() )
-    {
-        setError( "file already open" );
-        return false;
-    }
-
     if( !mFileName->length() )
     {
         setError( "empty filename" );
         return false;
     }
 
-    mFile->open( mFileName->c_str(), std::ios::out | std::ios::trunc );
-
-    if( !mFile->is_open() )
-    {
-        setError( "file not open" );
-        return false;
-    }
-
-    mCount = 0;
-    *mFile << "{\n";
-    *mFile << "    \"assets\":\n";
-    *mFile << "    [";
+    mJsonFileWriter->StartObject();
+    mJsonFileWriter->Key( jaf::common::assetArrayTag.c_str() );
+    mJsonFileWriter->StartArray();
     return true;
 }
 
 bool jaf::Builder::add( jaf::Builder::Asset asset )
 {
-    if( !mFile->is_open() )
-    {
-        setError( "file not open" );
-        return false;
-    }
-
-    if( asset.dataLength <= 0 )
-    {
-        setError( "invalid data length" );
-        return false;
-    }
+    mJsonFileWriter->StartObject();
 
     std::string base64Data = jaf::utils::toBase64( asset.data, asset.dataLength );
 
-    if( !base64Data.length() )
-    {
-        setError( "base64 encoding returned empty" );
-        return false;
-    }
+    mJsonFileWriter->Key( jaf::common::prefixTag.c_str() );
+    mJsonFileWriter->String( asset.prefix.c_str() );
 
-    if( mCount )
-        *mFile << ",\n";
+    mJsonFileWriter->Key( jaf::common::dataNameTag.c_str() );
+    mJsonFileWriter->String( asset.name.c_str() );
 
-    *mFile << jaf::common::tab << "{ ";
-    *mFile << "\"" << jaf::common::prefixTag     << "\": \"" << asset.prefix << "\",";
-    *mFile << "\"" << jaf::common::dataNameTag   << "\": \"" << asset.name   << "\",";
-    *mFile << "\"" << jaf::common::dataTag       << "\": \"" << base64Data   << "\"";
-    *mFile << " }";
+    mJsonFileWriter->Key( jaf::common::dataTag.c_str() );
+    mJsonFileWriter->String( base64Data.c_str() );
 
-    mCount++;
+    mJsonFileWriter->EndObject();
     return true;
 }
 
 bool jaf::Builder::finish()
 {
+    mJsonFileWriter->EndArray();
+    mJsonFileWriter->EndObject();
+
+    mFile->open( mFileName->c_str(), std::ios::out | std::ios::trunc );
     if( !mFile->is_open() )
     {
-        setError( "file not open" );
+        setError( "failed to write to disk" );
         return false;
     }
 
-    *mFile << "\n";
-    *mFile << jaf::common::tab << "]\n";
-    *mFile << "}\n";
-
+    *mFile << mJsonFileBuffer->GetString();
     mFile->close();
     return true;
 }
