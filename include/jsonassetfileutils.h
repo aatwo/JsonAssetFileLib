@@ -19,7 +19,7 @@ namespace jaf
             "abcdefghijklmnopqrstuvwxyz"
             "0123456789+/";
 
-        std::string                 toBase64( const unsigned char* data, unsigned int dataLength );
+        std::string                 toBase64( const unsigned char* data, size_t dataLength );
         std::vector<unsigned char>  fromBase64( std::string const& base64 );
         bool                        isBase64( unsigned char c );
 

@@ -2,7 +2,7 @@
 #include <iostream>
 
 
-std::string jaf::utils::toBase64( const unsigned char* data, unsigned int dataLength )
+std::string jaf::utils::toBase64( const unsigned char* data, size_t dataLength )
 {
     std::string ret;
     int i = 0;
