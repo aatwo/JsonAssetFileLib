@@ -6,10 +6,14 @@ CONFIG -= qt
 
 
 SOURCES += main.cpp \
-    buildertest.cpp
+    buildertest.cpp \
+    readertest.cpp \
+    common.cpp
 
 HEADERS += \
-    buildertest.h
+    buildertest.h \
+    readertest.h \
+    common.h
 
 unix|win32: {
 

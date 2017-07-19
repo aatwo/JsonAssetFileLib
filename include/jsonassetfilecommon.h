@@ -32,7 +32,7 @@ namespace jaf
         const std::string assetArrayTag = "assets";
         const std::string prefixTag     = "prefix";
         const std::string dataNameTag   = "name";
-        const std::string dataTag       = "prefix";
+        const std::string dataTag       = "data";
 
 
     } // common

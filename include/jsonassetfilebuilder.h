@@ -32,7 +32,7 @@ namespace jaf
             bool                start();
             bool                add( Asset asset );
             bool                finish();
-            bool                isOpen();
+            bool                isStarted();
             std::string         lastError();
 
 
@@ -40,9 +40,9 @@ namespace jaf
 
             void                setError( const char* error );
 
+            bool                mStarted    = false;
             std::string*        mFileName   = nullptr;
             std::string*        mLastError  = nullptr;
-            std::ofstream*      mFile       = nullptr;
             rapidjson::StringBuffer* mJsonFileBuffer = nullptr;
             rapidjson::Writer<rapidjson::StringBuffer>* mJsonFileWriter = nullptr;
 

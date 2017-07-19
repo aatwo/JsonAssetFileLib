@@ -1,16 +1,16 @@
-#ifndef BUILDERTEST_H
-#define BUILDERTEST_H
+#ifndef READERTEST_H
+#define READERTEST_H
 
 
 #include <string>
 #include "common.h"
 
 
-class BuilderTest
+class ReaderTest
 {
     public:
 
-                            BuilderTest();
+                            ReaderTest();
         bool                Run();
         std::string         LastError();
 
@@ -20,7 +20,7 @@ class BuilderTest
         std::string         mLastError;
 
 
-}; // BuilderTest
+}; // ReaderTest
 
 
-#endif // BUILDERTEST_H
+#endif // READERTEST_H

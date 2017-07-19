@@ -5,7 +5,6 @@
 jaf::Builder::Builder( const char* fileName )
     : mFileName( new std::string( fileName ) ),
       mLastError( new std::string( "" ) ),
-      mFile( new std::ofstream() ),
       mJsonFileBuffer( new rapidjson::StringBuffer ),
       mJsonFileWriter( new rapidjson::Writer<rapidjson::StringBuffer>( *mJsonFileBuffer ) )
 {
@@ -18,18 +17,20 @@ jaf::Builder::Builder( std::string fileName )
 
 jaf::Builder::~Builder()
 {
-    if( mFile->is_open() )
-        mFile->close();
-
     delete mJsonFileWriter;
     delete mJsonFileBuffer;
-    delete mFile;
     delete mLastError;
     delete mFileName;
 }
 
 bool jaf::Builder::start()
 {
+    if( mStarted )
+    {
+        setError( "already started" );
+        return false;
+    }
+
     if( !mFileName->length() )
     {
         setError( "empty filename" );
@@ -39,11 +40,18 @@ bool jaf::Builder::start()
     mJsonFileWriter->StartObject();
     mJsonFileWriter->Key( jaf::common::assetArrayTag.c_str() );
     mJsonFileWriter->StartArray();
+    mStarted = true;
     return true;
 }
 
 bool jaf::Builder::add( jaf::Builder::Asset asset )
 {
+    if( !mStarted )
+    {
+        setError( "not started" );
+        return false;
+    }
+
     mJsonFileWriter->StartObject();
 
     std::string base64Data = jaf::utils::toBase64( asset.data, asset.dataLength );
@@ -63,24 +71,33 @@ bool jaf::Builder::add( jaf::Builder::Asset asset )
 
 bool jaf::Builder::finish()
 {
-    mJsonFileWriter->EndArray();
-    mJsonFileWriter->EndObject();
-
-    mFile->open( mFileName->c_str(), std::ios::out | std::ios::trunc );
-    if( !mFile->is_open() )
+    if( !mStarted )
     {
-        setError( "failed to write to disk" );
+        setError( "not started" );
         return false;
     }
 
-    *mFile << mJsonFileBuffer->GetString();
-    mFile->close();
+    mStarted = false;
+    mJsonFileWriter->EndArray();
+    mJsonFileWriter->EndObject();
+
+    std::ofstream file;
+    file.open( mFileName->c_str(), std::ios::out | std::ios::trunc );
+    if( !file.is_open() )
+    {
+        setError( "failed to write to disk" );
+        file.close();
+        return false;
+    }
+
+    file << mJsonFileBuffer->GetString();
+    file.close();
     return true;
 }
 
-bool jaf::Builder::isOpen()
+bool jaf::Builder::isStarted()
 {
-    return mFile->is_open();
+    return mStarted;
 }
 
 std::string jaf::Builder::lastError()
@@ -90,5 +107,5 @@ std::string jaf::Builder::lastError()
 
 void jaf::Builder::setError( const char* error )
 {
-    *mLastError = error;
+    *mLastError = std::string( error );
 }
