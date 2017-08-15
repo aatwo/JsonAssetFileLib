@@ -3,11 +3,13 @@
 
 
 #include "jsonassetfilecommon.h"
-#include <string>
-#include <vector>
+#include "jsonassetfileutils.h"
 #include "rapidjson/reader.h"
 #include "rapidjson/stringbuffer.h"
+#include <string>
+#include <vector>
 #include <iostream>
+#include <fstream>
 
 
 using namespace rapidjson;
@@ -18,43 +20,83 @@ namespace jaf
 {
 
 
-    class __EXPORTED__ Reader
+    struct ReaderAsset
     {
-        public:
-
-            struct Asset
-            {
-                std::vector<unsigned char> data;
-                std::string     prefix;
-                std::string     name;
-            };
-
-                                Reader();
-                                ~Reader();
-
-            bool                getAssets( std::string fileName, std::vector<jaf::Reader::Asset>& assets_OUT );
-            std::string         lastError();
-
-
-        private:
-
-            void                setError( const char* error );
-
-            std::string*        mLastError  = nullptr;
-
-
-
-    }; // Reader
+        std::vector<unsigned char> data;
+        std::string     prefix;
+        std::string     name;
+    };
 
 
     class ReaderParseHandler {
 
         public:
 
-                                ReaderParseHandler( std::vector<Reader::Asset>& assetList ) : assetList( assetList ) {}
+            ReaderParseHandler( std::vector<ReaderAsset>& assetList )
+                : assetList( assetList )
+            {
+            }
 
-            bool                Key( const char* str, SizeType length, bool copy );
-            bool                String( const char* str, SizeType length, bool copy );
+            bool Key( const char* str, SizeType length, bool /*copy*/ )
+            {
+                std::string key( str, length );
+
+                if( key == jaf::common::dataNameTag )
+                    lastKey = LastKey::name;
+
+                else if( key == jaf::common::prefixTag )
+                    lastKey = LastKey::prefix;
+
+                else if( key == jaf::common::dataTag )
+                    lastKey = LastKey::data;
+
+                else
+                    lastKey = LastKey::none;
+
+                return true;
+            }
+
+            bool String( const char* str, SizeType length, bool /*copy*/ )
+            {
+                switch( lastKey )
+                {
+                case LastKey::name:
+                {
+                    gotName = true;
+                    currentAsset.name = std::string( str, length );
+                    break;
+                }
+
+                case LastKey::prefix:
+                {
+                    gotPrefix = true;
+                    currentAsset.prefix = std::string( str, length );
+                    break;
+                }
+
+                case LastKey::data:
+                {
+                    gotData = true;
+                    std::string base64Data( str, length );
+                    currentAsset.data = jaf::utils::fromBase64( base64Data );
+                    break;
+                }
+
+                default: {}
+                }
+
+                if( gotName && gotPrefix && gotData )
+                {
+                    gotName     = false;
+                    gotPrefix   = false;
+                    gotData     = false;
+
+                    assetList.push_back( currentAsset );
+                    currentAsset = ReaderAsset();
+                }
+
+                return true;
+            }
 
             // Unrequired types
             bool                StartObject() { return true; }
@@ -86,12 +128,79 @@ namespace jaf
             bool                gotName     = false;
             bool                gotPrefix   = false;
             bool                gotData     = false;
-            Reader::Asset       currentAsset;
-            std::vector<Reader::Asset>& assetList;
+            ReaderAsset         currentAsset;
+            std::vector<ReaderAsset>& assetList;
 
 
 
     }; // ReaderParseHandler
+
+
+    class Reader
+    {
+        public:
+
+            Reader()
+                : mLastError( new std::string( "" ) )
+            {
+            }
+
+            ~Reader()
+            {
+                delete mLastError;
+            }
+
+            bool getAssets( std::string fileName, std::vector<jaf::ReaderAsset>& assets_OUT )
+            {
+                std::ifstream file;
+                file.open( fileName.c_str(), std::ios::in );
+                if( !file.is_open() )
+                {
+                    setError( "failed to read from file" );
+                    return false;
+                }
+
+                std::vector<char> data;
+
+                char c = file.get();
+                data.push_back( c );
+
+                while( file.good() )
+                {
+                    c = file.get();
+                    data.push_back( c );
+                }
+
+                file.close();
+
+                rapidjson::StringStream jsonFileStream( data.data() );
+
+                ReaderParseHandler handler( assets_OUT );
+
+                rapidjson::Reader reader;
+                reader.Parse( jsonFileStream, handler );
+
+                return true;
+            }
+
+            std::string lastError()
+            {
+                return *mLastError;
+            }
+
+
+        private:
+
+            void setError( const char* error )
+            {
+                *mLastError = std::string( error );
+            }
+
+            std::string* mLastError  = nullptr;
+
+
+
+    }; // Reader
 
 
 

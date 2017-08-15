@@ -14,10 +14,7 @@ DEFINES += JSONASSETFILELIB_LIBRARY
 INCLUDEPATH += \
     include
 
-SOURCES += \
-    src/jsonassetfilebuilder.cpp \
-    src/jsonassetfilereader.cpp \
-    src/jsonassetfileutils.cpp
+SOURCES +=
 
 HEADERS += \
     include/jsonassetfilelib.h \

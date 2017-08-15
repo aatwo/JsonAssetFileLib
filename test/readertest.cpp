@@ -14,7 +14,7 @@ bool ReaderTest::Run()
     // TODO: store the actual assets somewhere and check they match the input
 
     jaf::Reader reader;
-    std::vector<jaf::Reader::Asset> assets;
+    std::vector<jaf::ReaderAsset> assets;
     if( !reader.getAssets( "test.json", assets ) )
     {
         mLastError = reader.lastError();
