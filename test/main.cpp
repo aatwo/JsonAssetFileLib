@@ -26,5 +26,7 @@ int main()
         cout << "[FAIL] - " << readerTest.LastError() << endl;
 
 
+    int value;
+    cin >> value;
     return 0;
 }

@@ -1,2 +1,10 @@
 # JsonAssetFileLib
-A small library for creating and reading JSON asset files (e.g. for games)
+<b>What is JsonAssetFileLib?</b> This is a small header only library for creating and reading JSON asset files (e.g. for games). It's essentially a specialised wrapper around rapidJson (http://rapidjson.org/) for very simple use cases, providing a much easier and more consistent format for creating asset files. It also base64 encodes all data so you don't need to worry about storing binary data which is not compatible with json.
+
+<b>How do I use it?</b> Since it's a header only library all you need to do is copy the include folder to your project and then in your .h/.cpp files just include the files you need (e.g. jsonassetfilelib.h, jsonassetfilebuilder.h or jsonassetfilereader.h).
+
+<b>Builder</b> This class, found in jsonassetfilebuilder.h, can be used to build asset files. First you call jaf::Builder::start(). Next you just call jaf::Builder::add(Asset) for all of the assets you want to store. Lastly just call jaf::builder::finish() to complete the file. At the end of this you will be left with a json file containing all of the encoded assets you added.
+
+When adding assets to the file using the jaf::Builder::add(Asset) function you must pass in an asset structure. This structure contains the following: a pointer to the data, the size of the data, the asset prefix and the asset name. The prefix and names are purely there to help you manage your assets and do not control the structure of the output json file in any way. The memory pointed to by the data pointer should also be managed entirely by you. The library does not free or manage this memory.
+
+<b>Reader</b> This class, found in jsonassetfilereader.h, can be used to read asset files that were created with the Builder class. To use this class all you need to do is create an instance of it and call the jaf::Reader::getAssets() function which will return a list of ReaderAsset structures, which fully describe the asset data (data, prefix and name). It's worth noting that this will read all of the assets in the asset file into memory which might be a problem for projects using large assets.
